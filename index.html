@@ -388,7 +388,7 @@
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Uraian Saran / Kendala <span class="text-red-500">*</span></label>
                             <textarea id="saranPesan" rows="4" required placeholder="Tuliskan detail masukan atau nomor PC yang mengalami kendala..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                        <button type="submit" id="btnSubmitSaran" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
                             <i class="fa-solid fa-paper-plane"></i>
                             <span>Kirim Saran</span>
                         </button>
@@ -528,7 +528,7 @@
                 </div>
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="closeModal('modalJadwal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-sm">Simpan Jadwal</button>
+                    <button type="submit" id="btnSubmitJadwal" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-sm">Simpan Jadwal</button>
                 </div>
             </form>
         </div>
@@ -595,7 +595,7 @@
                 </div>
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="closeModal('modalKunjungan')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-sm">Simpan Kunjungan</button>
+                    <button type="submit" id="btnSubmitKunjungan" class="px-5 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-sm">Simpan Kunjungan</button>
                 </div>
             </form>
         </div>
@@ -615,6 +615,9 @@
     </div>
 
     <script>
+        // URL Apps Script Web App (Ganti dengan URL yang Anda dapatkan setelah Deploy Web App)
+        const SCRIPT_URL = "GANTI_DENGAN_URL_WEB_APP_ANDA";
+
         // Data Awal State Application
         let state = {
             jadwal: [],
@@ -624,7 +627,7 @@
 
         const STORAGE_KEY = 'sistem_laporan_lab_komputer_db';
 
-        // Fungsi menyimpan data state ke LocalStorage agar permanen di browser
+        // Fungsi menyimpan data state ke LocalStorage
         function saveToLocalStorage() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -633,7 +636,7 @@
             }
         }
 
-        // Fungsi memuat data dari LocalStorage saat halaman pertama kali dibuka/direload
+        // Fungsi memuat data dari LocalStorage
         function loadFromLocalStorage() {
             try {
                 const savedData = localStorage.getItem(STORAGE_KEY);
@@ -648,18 +651,39 @@
             }
         }
 
+        // Fungsi Helper Mengirim Data ke Google Sheets
+        async function sendToGoogleSheet(actionType, payload) {
+            if (!SCRIPT_URL || SCRIPT_URL === "GANTI_DENGAN_URL_WEB_APP_ANDA") {
+                console.warn("URL Apps Script belum diisi. Data disimpan ke LocalStorage saja.");
+                return;
+            }
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Mencegah pemblokiran CORS dari Github Pages
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: actionType,
+                        data: payload
+                    })
+                });
+            } catch (err) {
+                console.error("Gagal mengirim data ke Google Sheet:", err);
+            }
+        }
+
         let usageChartInstance = null;
 
         window.onload = function() {
-            // Load persistent data from LocalStorage
             loadFromLocalStorage();
 
-            // Set default date picker value to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('kunTanggal').value = today;
             document.getElementById('currentDateFormatted').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-            // Initial Renders
             renderDashboardStats();
             initChart();
             renderJadwalTable();
@@ -777,8 +801,12 @@
             `).join('');
         }
 
-        function handleSaveJadwal(e) {
+        async function handleSaveJadwal(e) {
             e.preventDefault();
+            const btn = document.getElementById('btnSubmitJadwal');
+            btn.disabled = true;
+            btn.innerText = "Menyimpan...";
+
             const newJadwal = {
                 id: Date.now(),
                 hari: document.getElementById('jadwalHari').value,
@@ -790,17 +818,23 @@
             };
 
             state.jadwal.push(newJadwal);
-            saveToLocalStorage(); // Auto-save ke LocalStorage
+            saveToLocalStorage();
             renderJadwalTable();
             renderDashboardStats();
+
+            // Kirim ke Google Sheet
+            await sendToGoogleSheet('ADD_JADWAL', newJadwal);
+
+            btn.disabled = false;
+            btn.innerText = "Simpan Jadwal";
             closeModal('modalJadwal');
             document.getElementById('formAddJadwal').reset();
-            showToast('Jadwal baru berhasil ditambahkan!');
+            showToast('Jadwal berhasil ditambahkan & tersimpan ke Google Sheet!');
         }
 
         function deleteJadwal(id) {
             state.jadwal = state.jadwal.filter(j => j.id !== id);
-            saveToLocalStorage(); // Update LocalStorage setelah hapus
+            saveToLocalStorage();
             renderJadwalTable();
             renderDashboardStats();
             showToast('Jadwal berhasil dihapus', 'info');
@@ -847,8 +881,12 @@
             }).join('');
         }
 
-        function handleSaveKunjungan(e) {
+        async function handleSaveKunjungan(e) {
             e.preventDefault();
+            const btn = document.getElementById('btnSubmitKunjungan');
+            btn.disabled = true;
+            btn.innerText = "Menyimpan...";
+
             const newKun = {
                 id: Date.now(),
                 tanggal: document.getElementById('kunTanggal').value,
@@ -863,19 +901,25 @@
             };
 
             state.kunjungan.unshift(newKun);
-            saveToLocalStorage(); // Auto-save ke LocalStorage
+            saveToLocalStorage();
             renderKunjunganTable();
             renderDashboardStats();
             renderLaporanTable();
             updateChart();
+
+            // Kirim ke Google Sheet
+            await sendToGoogleSheet('ADD_KUNJUNGAN', newKun);
+
+            btn.disabled = false;
+            btn.innerText = "Simpan Kunjungan";
             closeModal('modalKunjungan');
             document.getElementById('formAddKunjungan').reset();
-            showToast('Catatan kunjungan baru berhasil disimpan!');
+            showToast('Kunjungan berhasil disimpan & tersimpan ke Google Sheet!');
         }
 
         function deleteKunjungan(id) {
             state.kunjungan = state.kunjungan.filter(k => k.id !== id);
-            saveToLocalStorage(); // Update LocalStorage setelah hapus
+            saveToLocalStorage();
             renderKunjunganTable();
             renderDashboardStats();
             renderLaporanTable();
@@ -934,8 +978,12 @@
             `).join('');
         }
 
-        function handleSaveSaran(e) {
+        async function handleSaveSaran(e) {
             e.preventDefault();
+            const btn = document.getElementById('btnSubmitSaran');
+            btn.disabled = true;
+            btn.innerText = "Mengirim...";
+
             const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
             const newSaran = {
                 id: Date.now(),
@@ -949,16 +997,22 @@
             };
 
             state.saran.unshift(newSaran);
-            saveToLocalStorage(); // Auto-save ke LocalStorage
+            saveToLocalStorage();
             renderSaranList();
             renderDashboardStats();
-            document.getElementById('formAddSaran') ? document.getElementById('formAddSaran').reset() : document.getElementById('formSaran').reset();
-            showToast('Saran & masukan Anda telah terkirim!');
+
+            // Kirim ke Google Sheet
+            await sendToGoogleSheet('ADD_SARAN', newSaran);
+
+            btn.disabled = false;
+            btn.innerText = "Kirim Saran";
+            document.getElementById('formSaran').reset();
+            showToast('Saran berhasil terkirim & tersimpan ke Google Sheet!');
         }
 
         function deleteSaran(id) {
             state.saran = state.saran.filter(s => s.id !== id);
-            saveToLocalStorage(); // Update LocalStorage setelah hapus
+            saveToLocalStorage();
             renderSaranList();
             renderDashboardStats();
             showToast('Saran & kendala berhasil dihapus!', 'info');
@@ -972,7 +1026,7 @@
             if(balasan !== null) {
                 saranObj.tanggapan = balasan;
                 saranObj.status = 'Selesai';
-                saveToLocalStorage(); // Update LocalStorage setelah tanggapan
+                saveToLocalStorage();
                 renderSaranList();
                 showToast('Tanggapan berhasil diperbarui!');
             }
