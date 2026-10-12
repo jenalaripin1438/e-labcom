@@ -615,16 +615,45 @@
     </div>
 
     <script>
-        // Data Awal (Dikosongkan untuk input data baru)
+        // Data Awal State Application
         let state = {
             jadwal: [],
             kunjungan: [],
             saran: []
         };
 
+        const STORAGE_KEY = 'sistem_laporan_lab_komputer_db';
+
+        // Fungsi menyimpan data state ke LocalStorage agar permanen di browser
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (error) {
+                console.error("Gagal menyimpan data ke LocalStorage:", error);
+            }
+        }
+
+        // Fungsi memuat data dari LocalStorage saat halaman pertama kali dibuka/direload
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    state.jadwal = parsed.jadwal || [];
+                    state.kunjungan = parsed.kunjungan || [];
+                    state.saran = parsed.saran || [];
+                }
+            } catch (error) {
+                console.error("Gagal memuat data dari LocalStorage:", error);
+            }
+        }
+
         let usageChartInstance = null;
 
         window.onload = function() {
+            // Load persistent data from LocalStorage
+            loadFromLocalStorage();
+
             // Set default date picker value to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('kunTanggal').value = today;
@@ -761,6 +790,7 @@
             };
 
             state.jadwal.push(newJadwal);
+            saveToLocalStorage(); // Auto-save ke LocalStorage
             renderJadwalTable();
             renderDashboardStats();
             closeModal('modalJadwal');
@@ -770,6 +800,7 @@
 
         function deleteJadwal(id) {
             state.jadwal = state.jadwal.filter(j => j.id !== id);
+            saveToLocalStorage(); // Update LocalStorage setelah hapus
             renderJadwalTable();
             renderDashboardStats();
             showToast('Jadwal berhasil dihapus', 'info');
@@ -832,6 +863,7 @@
             };
 
             state.kunjungan.unshift(newKun);
+            saveToLocalStorage(); // Auto-save ke LocalStorage
             renderKunjunganTable();
             renderDashboardStats();
             renderLaporanTable();
@@ -843,6 +875,7 @@
 
         function deleteKunjungan(id) {
             state.kunjungan = state.kunjungan.filter(k => k.id !== id);
+            saveToLocalStorage(); // Update LocalStorage setelah hapus
             renderKunjunganTable();
             renderDashboardStats();
             renderLaporanTable();
@@ -916,14 +949,16 @@
             };
 
             state.saran.unshift(newSaran);
+            saveToLocalStorage(); // Auto-save ke LocalStorage
             renderSaranList();
             renderDashboardStats();
-            document.getElementById('formSaran').reset();
+            document.getElementById('formAddSaran') ? document.getElementById('formAddSaran').reset() : document.getElementById('formSaran').reset();
             showToast('Saran & masukan Anda telah terkirim!');
         }
 
         function deleteSaran(id) {
             state.saran = state.saran.filter(s => s.id !== id);
+            saveToLocalStorage(); // Update LocalStorage setelah hapus
             renderSaranList();
             renderDashboardStats();
             showToast('Saran & kendala berhasil dihapus!', 'info');
@@ -937,6 +972,7 @@
             if(balasan !== null) {
                 saranObj.tanggapan = balasan;
                 saranObj.status = 'Selesai';
+                saveToLocalStorage(); // Update LocalStorage setelah tanggapan
                 renderSaranList();
                 showToast('Tanggapan berhasil diperbarui!');
             }
