@@ -615,24 +615,11 @@
     </div>
 
     <script>
-        // Initial Demo Data
+        // Data Awal (Dikosongkan untuk input data baru)
         let state = {
-            jadwal: [
-                { id: 1, hari: 'Senin', jam: '07.30 - 09.00', kelas: 'VII A', mapel: 'Informatika', guru: 'Dedi Setiadi, S.Pd.' },
-                { id: 2, hari: 'Senin', jam: '09.15 - 10.45', kelas: 'VIII C', mapel: 'Informatika', guru: 'Ani Rahmawati, S.Kom.' },
-                { id: 3, hari: 'Selasa', jam: '08.00 - 09.30', kelas: 'IX B', mapel: 'Bimbingan TIK', guru: 'Dedi Setiadi, S.Pd.' },
-                { id: 4, hari: 'Rabu', jam: '10.00 - 11.30', kelas: 'VII B', mapel: 'Informatika', guru: 'Ani Rahmawati, S.Kom.' },
-                { id: 5, hari: 'Kamis', jam: '08.00 - 10.00', kelas: 'IX A', mapel: 'Simulasi ANBK', guru: 'Tim Proktor Lab' }
-            ],
-            kunjungan: [
-                { id: 101, tanggal: '2026-10-05', jam: '07.30 - 09.00', guru: 'Dedi Setiadi, S.Pd.', kelas: 'VII A', jmlSiswa: 32, mapel: 'Pengenalan Algoritma', pcUsed: 32, kondisi: 'Sangat Baik', catatan: 'Pembelajaran lancar' },
-                { id: 102, tanggal: '2026-10-06', jam: '09.15 - 10.45', guru: 'Ani Rahmawati, S.Kom.', kelas: 'VIII C', jmlSiswa: 30, mapel: 'Pengolahan Kata MS Word', pcUsed: 30, kondisi: 'Baik', catatan: 'PC Client 08 lambat terhubung Wi-Fi' },
-                { id: 103, tanggal: '2026-10-07', jam: '08.00 - 09.30', guru: 'Dedi Setiadi, S.Pd.', kelas: 'IX B', jmlSiswa: 34, mapel: 'Desain Grafis Canva', pcUsed: 34, kondisi: 'Sangat Baik', catatan: '-' }
-            ],
-            saran: [
-                { id: 201, nama: 'Dra. Hj. Siti Nurjanah', peran: 'Guru Pengampu', kategori: 'Jaringan & Internet', pesan: 'Koneksi internet di barisan PC 3 kadang terputus saat streaming video edukasi.', tanggal: '05 Okt 2026', tanggapan: 'Sudah dilakukan restart router switch zone B.', status: 'Selesai' },
-                { id: 202, nama: 'Rizky Pratama', peran: 'Siswa Kelas 8', kategori: 'Fasilitas & Hardware', pesan: 'Keyboard pada PC Client 14 tombol Spasi agak keras saat ditekan.', tanggal: '06 Okt 2026', tanggapan: 'Akan dilakukan perawatan berkala oleh teknisi hari Jumat.', status: 'Proses' }
-            ]
+            jadwal: [],
+            kunjungan: [],
+            saran: []
         };
 
         let usageChartInstance = null;
@@ -678,14 +665,13 @@
         function initChart() {
             const ctx = document.getElementById('usageChart').getContext('2d');
             
-            // Group usage count by class
             const classCounts = {};
             state.kunjungan.forEach(k => {
                 classCounts[k.kelas] = (classCounts[k.kelas] || 0) + 1;
             });
 
-            const labels = Object.keys(classCounts).length ? Object.keys(classCounts) : ['VII A', 'VII B', 'VIII C', 'IX A', 'IX B'];
-            const dataValues = Object.keys(classCounts).length ? Object.values(classCounts) : [4, 3, 5, 2, 6];
+            const labels = Object.keys(classCounts).length ? Object.keys(classCounts) : ['VII A', 'VII B', 'VIII A', 'VIII B', 'IX A', 'IX B'];
+            const dataValues = Object.keys(classCounts).length ? Object.values(classCounts) : [0, 0, 0, 0, 0, 0];
 
             usageChartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -715,30 +701,46 @@
             });
         }
 
+        function updateChart() {
+            if (!usageChartInstance) return;
+            const classCounts = {};
+            state.kunjungan.forEach(k => {
+                classCounts[k.kelas] = (classCounts[k.kelas] || 0) + 1;
+            });
+
+            const labels = Object.keys(classCounts).length ? Object.keys(classCounts) : ['VII A', 'VII B', 'VIII A', 'VIII B', 'IX A', 'IX B'];
+            const dataValues = Object.keys(classCounts).length ? Object.values(classCounts) : [0, 0, 0, 0, 0, 0];
+
+            usageChartInstance.data.labels = labels;
+            usageChartInstance.data.datasets[0].data = dataValues;
+            usageChartInstance.update();
+        }
+
         function renderJadwalTable() {
+            const filterHari = document.getElementById('filterHariJadwal').value;
             const tbody = document.getElementById('jadwalTableBody');
-            const filter = document.getElementById('filterHariJadwal').value;
             
-            const filtered = filter === 'Semua' 
-                ? state.jadwal 
-                : state.jadwal.filter(item => item.hari === filter);
+            let filtered = state.jadwal;
+            if (filterHari !== 'Semua') {
+                filtered = state.jadwal.filter(j => j.hari === filterHari);
+            }
 
-            document.getElementById('count-jadwal-info').innerText = `Menampilkan ${filtered.length} dari ${state.jadwal.length} jadwal`;
+            document.getElementById('count-jadwal-info').innerText = `Menampilkan ${filtered.length} dari ${state.jadwal.length} jadwal terdaftar`;
 
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">Belum ada jadwal terdaftar untuk hari ini</td></tr>`;
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada jadwal terdaftar. Klik "Tambah Jadwal Baru" untuk menambahkan.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
+            tbody.innerHTML = filtered.map(j => `
                 <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 font-semibold text-brand-900">${item.hari}</td>
-                    <td class="p-4 text-slate-600"><i class="fa-regular fa-clock mr-1.5 text-slate-400"></i>${item.jam}</td>
-                    <td class="p-4"><span class="bg-slate-100 text-slate-800 font-medium px-2.5 py-1 rounded-md text-xs border border-slate-200">${item.kelas}</span></td>
-                    <td class="p-4 font-medium text-slate-800">${item.mapel}</td>
-                    <td class="p-4 text-slate-600">${item.guru}</td>
+                    <td class="p-4 font-semibold text-slate-800">${j.hari}</td>
+                    <td class="p-4 text-slate-600"><i class="fa-regular fa-clock mr-1 text-slate-400"></i>${j.mulai} - ${j.selesai} WIB</td>
+                    <td class="p-4"><span class="bg-brand-50 text-brand-700 px-2.5 py-1 rounded-md text-xs font-semibold">${j.kelas}</span></td>
+                    <td class="p-4 font-medium text-slate-800">${j.mapel}</td>
+                    <td class="p-4 text-slate-600">${j.guru}</td>
                     <td class="p-4 text-center">
-                        <button onclick="deleteJadwal(${item.id})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all" title="Hapus Jadwal">
+                        <button onclick="deleteJadwal(${j.id})" class="text-red-500 hover:text-red-700 transition-colors px-2 py-1" title="Hapus Jadwal">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </td>
@@ -751,7 +753,8 @@
             const newJadwal = {
                 id: Date.now(),
                 hari: document.getElementById('jadwalHari').value,
-                jam: `${document.getElementById('jadwalMulai').value} - ${document.getElementById('jadwalSelesai').value} WIB`,
+                mulai: document.getElementById('jadwalMulai').value,
+                selesai: document.getElementById('jadwalSelesai').value,
                 kelas: document.getElementById('jadwalKelas').value,
                 mapel: document.getElementById('jadwalMapel').value,
                 guru: document.getElementById('jadwalGuru').value
@@ -762,7 +765,7 @@
             renderDashboardStats();
             closeModal('modalJadwal');
             document.getElementById('formAddJadwal').reset();
-            showToast('Jadwal penggunaan berhasil ditambahkan!');
+            showToast('Jadwal baru berhasil ditambahkan!');
         }
 
         function deleteJadwal(id) {
@@ -773,54 +776,44 @@
         }
 
         function renderKunjunganTable() {
-            const tbody = document.getElementById('kunjunganTableBody');
             const search = document.getElementById('searchKunjungan').value.toLowerCase();
-            const filterDate = document.getElementById('filterTanggalKunjungan').value;
+            const filterTanggal = document.getElementById('filterTanggalKunjungan').value;
+            const tbody = document.getElementById('kunjunganTableBody');
 
-            let filtered = state.kunjungan.filter(item => {
-                const matchesSearch = item.guru.toLowerCase().includes(search) || 
-                                      item.kelas.toLowerCase().includes(search) || 
-                                      item.mapel.toLowerCase().includes(search);
-                const matchesDate = filterDate ? item.tanggal === filterDate : true;
-                return matchesSearch && matchesDate;
+            let filtered = state.kunjungan.filter(k => {
+                const matchSearch = k.guru.toLowerCase().includes(search) || 
+                                    k.kelas.toLowerCase().includes(search) || 
+                                    k.mapel.toLowerCase().includes(search);
+                const matchTanggal = filterTanggal ? k.tanggal === filterTanggal : true;
+                return matchSearch && matchTanggal;
             });
 
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Tidak ada catatan kunjungan yang cocok</td></tr>`;
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada catatan kunjungan yang sesuai.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4">
-                        <div class="font-medium text-slate-800">${item.tanggal}</div>
-                        <div class="text-xs text-slate-400">${item.jam}</div>
-                    </td>
-                    <td class="p-4 font-semibold text-slate-800">${item.guru}</td>
-                    <td class="p-4">
-                        <span class="bg-brand-50 text-brand-800 font-semibold px-2.5 py-1 rounded-md text-xs border border-brand-100">${item.kelas}</span>
-                        <div class="text-xs text-slate-500 mt-1">${item.jmlSiswa} Siswa</div>
-                    </td>
-                    <td class="p-4">
-                        <div class="font-medium text-slate-800">${item.mapel}</div>
-                        <div class="text-xs text-slate-400 italic">${item.catatan || '-'}</div>
-                    </td>
-                    <td class="p-4 font-bold text-brand-700">${item.pcUsed} Unit</td>
-                    <td class="p-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            item.kondisi === 'Sangat Baik' ? 'bg-emerald-100 text-emerald-800' :
-                            item.kondisi === 'Baik' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
-                        }">
-                            ${item.kondisi}
-                        </span>
-                    </td>
-                    <td class="p-4 text-center">
-                        <button onclick="deleteKunjungan(${item.id})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all" title="Hapus Catatan">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filtered.map(k => {
+                let badgeClass = 'bg-emerald-100 text-emerald-800';
+                if (k.kondisi === 'Baik') badgeClass = 'bg-blue-100 text-blue-800';
+                if (k.kondisi === 'Ada Rusak') badgeClass = 'bg-amber-100 text-amber-800';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-medium text-slate-800">${k.tanggal}<br><span class="text-xs text-slate-500">${k.jam}</span></td>
+                        <td class="p-4 font-semibold text-slate-800">${k.guru}</td>
+                        <td class="p-4"><span class="font-medium text-slate-700">${k.kelas}</span> <span class="text-xs text-slate-500">(${k.jmlSiswa} siswa)</span></td>
+                        <td class="p-4"><span class="font-medium text-slate-800">${k.mapel}</span>${k.catatan ? `<br><span class="text-xs text-amber-600 font-normal"><i class="fa-solid fa-note-sticky mr-1"></i>${k.catatan}</span>` : ''}</td>
+                        <td class="p-4 font-semibold text-slate-800">${k.pcUsed} Unit</td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass}">${k.kondisi}</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteKunjungan(${k.id})" class="text-red-500 hover:text-red-700 transition-colors px-2 py-1" title="Hapus Log">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function handleSaveKunjungan(e) {
@@ -842,6 +835,7 @@
             renderKunjunganTable();
             renderDashboardStats();
             renderLaporanTable();
+            updateChart();
             closeModal('modalKunjungan');
             document.getElementById('formAddKunjungan').reset();
             showToast('Catatan kunjungan baru berhasil disimpan!');
@@ -852,6 +846,7 @@
             renderKunjunganTable();
             renderDashboardStats();
             renderLaporanTable();
+            updateChart();
             showToast('Catatan kunjungan dihapus', 'info');
         }
 
