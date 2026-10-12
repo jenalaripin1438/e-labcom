@@ -150,7 +150,7 @@
                     </div>
                 </div>
 
-                <!-- CARDS PERANGKAT AKTIF DIPERBARUI SESUAI PERMINTAAN -->
+                <!-- CARDS PERANGKAT AKTIF -->
                 <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <div>
@@ -891,9 +891,16 @@
                     ` : ''}
                     <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
                         <span><i class="fa-regular fa-calendar mr-1"></i>${s.tanggal}</span>
-                        <button onclick="toggleTanggapan(${s.id})" class="text-brand-600 hover:underline font-medium">
-                            ${s.tanggapan ? 'Edit Tanggapan' : 'Beri Tanggapan'}
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="toggleTanggapan(${s.id})" class="text-brand-600 hover:text-brand-800 font-medium flex items-center gap-1">
+                                <i class="fa-regular fa-pen-to-square"></i>
+                                ${s.tanggapan ? 'Edit Tanggapan' : 'Beri Tanggapan'}
+                            </button>
+                            <button onclick="deleteSaran(${s.id})" class="text-red-500 hover:text-red-700 font-medium flex items-center gap-1 hover:underline" title="Hapus Masukan">
+                                <i class="fa-regular fa-trash-can"></i>
+                                <span>Hapus</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -918,6 +925,13 @@
             renderDashboardStats();
             document.getElementById('formSaran').reset();
             showToast('Saran & masukan Anda telah terkirim!');
+        }
+
+        function deleteSaran(id) {
+            state.saran = state.saran.filter(s => s.id !== id);
+            renderSaranList();
+            renderDashboardStats();
+            showToast('Saran & kendala berhasil dihapus!', 'info');
         }
 
         function toggleTanggapan(id) {
