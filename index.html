@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Laporan & Kunjungan Lab Komputer - SMPN 3 Limbangan</title>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -12,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             theme: {
@@ -34,6 +36,7 @@
             }
         }
     </script>
+    
     <style>
         /* Custom print stylesheet for official report printing */
         @media print {
@@ -55,12 +58,51 @@
                 display: none !important;
             }
         }
+
+        /* Custom scrollbar for better visual experience */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
 
     <!-- Navigation Bar Header -->
     <header class="bg-brand-900 text-white shadow-lg sticky top-0 z-30 no-print">
+        <!-- Google Sheet Integration Status Sub-Header -->
+        <div class="bg-brand-950/80 border-b border-brand-800/80 px-4 py-1.5 text-xs">
+            <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span id="syncStatusBadge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span id="syncStatusText">Memeriksa Koneksi Google Sheets...</span>
+                    </span>
+                    <span class="hidden sm:inline text-slate-400">| Sheet ID: <code class="text-amber-200 font-mono">1szFq0n9...31Dp1kuM</code></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="syncDataFromSheet()" title="Sinkronkan Ulang dengan Google Sheets" class="text-brand-100 hover:text-white flex items-center gap-1 transition-colors">
+                        <i id="syncIcon" class="fa-solid fa-arrows-rotate text-xs"></i>
+                        <span class="text-[11px]">Sinkronkan</span>
+                    </button>
+                    <button onclick="openModal('modalGoogleSheetsConfig')" class="bg-brand-700 hover:bg-brand-600 px-2.5 py-0.5 rounded text-[11px] text-amber-300 hover:text-white font-medium flex items-center gap-1 transition-colors">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>Pengaturan Google Sheet</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 <!-- Logo & School Name -->
@@ -132,7 +174,7 @@
                     <span class="bg-amber-400 text-brand-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block">Selamat Datang</span>
                     <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Portal Pelaporan Interaktif Lab Komputer</h2>
                     <p class="mt-2 text-brand-100 text-sm md:text-base leading-relaxed">
-                        Dokumentasi pemakaian sarana prasarana TI, penjadwalan kelas, serta rekapitulasi saran pengguna untuk mewujudkan layanan laboratorium berbasis digital di SMPN 3 Limbangan.
+                        Dokumentasi pemakaian sarana prasarana TI, penjadwalan kelas, serta rekapitulasi saran pengguna. Terhubung langsung dengan Google Sheets secara real-time.
                     </p>
                 </div>
             </div>
@@ -143,7 +185,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Total Kunjungan</p>
                         <h3 id="stat-total-kunjungan" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                        <p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Bulan Ini</p>
+                        <p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Tersimpan di Sheet</p>
                     </div>
                     <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
                         <i class="fa-solid fa-users text-2xl"></i>
@@ -177,9 +219,9 @@
 
                 <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Jadwal Sesi Minggu Ini</p>
+                        <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Jadwal Terdaftar</p>
                         <h3 id="stat-total-jadwal" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                        <p class="text-xs text-indigo-600 font-medium mt-1"><i class="fa-solid fa-calendar mr-1"></i>Sesi Terdaftar</p>
+                        <p class="text-xs text-indigo-600 font-medium mt-1"><i class="fa-solid fa-calendar mr-1"></i>Sesi Terjadwal</p>
                     </div>
                     <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
                         <i class="fa-solid fa-clock text-2xl"></i>
@@ -240,7 +282,7 @@
                     <div class="bg-amber-50 border-l-4 border-amber-400 p-3.5 rounded-r-lg">
                         <p class="text-xs text-amber-800 font-medium">
                             <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i>
-                            <strong>Pengingat Guru:</strong> Mohon mengisi form pencatatan kunjungan setiap selesai sesi pembelajaran di lab komputer.
+                            <strong>Pengingat Guru:</strong> Setiap pengisian data otomatis tersimpan ke Google Sheet ID <code class="bg-amber-100 px-1 rounded">1szFq0n9...</code>.
                         </p>
                     </div>
                 </div>
@@ -388,7 +430,7 @@
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Uraian Saran / Kendala <span class="text-red-500">*</span></label>
                             <textarea id="saranPesan" rows="4" required placeholder="Tuliskan detail masukan atau nomor PC yang mengalami kendala..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
                         </div>
-                        <button type="submit" id="btnSubmitSaran" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
                             <i class="fa-solid fa-paper-plane"></i>
                             <span>Kirim Saran</span>
                         </button>
@@ -481,6 +523,155 @@
 
     </main>
 
+    <!-- MODAL: PENGATURAN GOOGLE SHEETS -->
+    <div id="modalGoogleSheetsConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                    Integrasi Google Sheets
+                </h3>
+                <button onclick="closeModal('modalGoogleSheetsConfig')" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="mt-4 space-y-4 text-sm">
+                <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs space-y-1">
+                    <p class="font-semibold text-slate-700 flex items-center gap-1">
+                        <i class="fa-solid fa-link text-brand-600"></i>
+                        ID Google Sheet Anda:
+                    </p>
+                    <div class="flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200 font-mono text-slate-800">
+                        <span>1szFq0n9kL8-X-vNe9pJVvwTKgkAZpwWAM3u31Dp1kuM</span>
+                        <a href="https://docs.google.com/spreadsheets/d/1szFq0n9kL8-X-vNe9pJVvwTKgkAZpwWAM3u31Dp1kuM" target="_blank" class="text-brand-600 hover:underline flex items-center gap-1 font-sans text-xs">
+                            <span>Buka Sheet</span>
+                            <i class="fa-solid fa-up-right-from-square"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">
+                        Google Apps Script Web App URL <span class="text-red-500">*</span>
+                    </label>
+                    <input type="url" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500 outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">Tempelkan URL Web App yang didapatkan setelah menyebarkan (Deploy) Google Apps Script.</p>
+                </div>
+
+                <div class="border-t border-slate-100 pt-3">
+                    <button onclick="toggleScriptGuide()" class="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-code"></i>
+                        <span id="scriptGuideBtnText">Lihat Kode Google Apps Script & Cara Pasang</span>
+                    </button>
+
+                    <div id="scriptGuideContainer" class="hidden mt-3 bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono relative overflow-x-auto">
+                        <button onclick="copyAppsScriptCode()" class="absolute top-2 right-2 bg-brand-600 hover:bg-brand-500 text-white font-sans text-[11px] px-2.5 py-1 rounded transition-colors flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i>
+                            <span id="copyScriptText">Salin Script</span>
+                        </button>
+                        <p class="text-amber-300 font-sans font-semibold mb-2">// Langkah 1: Buka Google Sheet -> Extensions -> Apps Script</p>
+                        <p class="text-amber-300 font-sans font-semibold mb-2">// Langkah 2: Hapus kode bawaan dan tempelkan script di bawah ini:</p>
+                        <pre id="appsScriptCodeText" class="text-slate-300 text-[11px] leading-relaxed">
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ContentService.createTextOutput(JSON.stringify({
+    jadwal: getSheetData(ss, "Jadwal"),
+    kunjungan: getSheetData(ss, "Kunjungan"),
+    saran: getSheetData(ss, "Saran")
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var action = data.action;
+    
+    if (action === "addJadwal") appendRow(ss, "Jadwal", [data.id, data.hari, data.mulai, data.selesai, data.kelas, data.mapel, data.guru]);
+    else if (action === "deleteJadwal") deleteRowById(ss, "Jadwal", data.id);
+    else if (action === "addKunjungan") appendRow(ss, "Kunjungan", [data.id, data.tanggal, data.jam, data.guru, data.kelas, data.jmlSiswa, data.mapel, data.pcUsed, data.kondisi, data.catatan]);
+    else if (action === "deleteKunjungan") deleteRowById(ss, "Kunjungan", data.id);
+    else if (action === "addSaran") appendRow(ss, "Saran", [data.id, data.nama, data.peran, data.kategori, data.pesan, data.tanggal, data.tanggapan || '', data.status || 'Proses']);
+    else if (action === "updateSaran") updateSaranRow(ss, data.id, data.tanggapan, data.status);
+    else if (action === "deleteSaran") deleteRowById(ss, "Saran", data.id);
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getSheetData(ss, sheetName) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return [];
+  var rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return [];
+  var headers = rows[0];
+  var result = [];
+  for (var i = 1; i < rows.length; i++) {
+    var obj = {};
+    for (var j = 0; j < headers.length; j++) {
+      obj[headers[j]] = rows[i][j];
+    }
+    result.push(obj);
+  }
+  return result;
+}
+
+function appendRow(ss, sheetName, rowData) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    var headers = sheetName === "Jadwal" ? ["id","hari","mulai","selesai","kelas","mapel","guru"] :
+                  sheetName === "Kunjungan" ? ["id","tanggal","jam","guru","kelas","jmlSiswa","mapel","pcUsed","kondisi","catatan"] :
+                  ["id","nama","peran","kategori","pesan","tanggal","tanggapan","status"];
+    sheet.appendRow(headers);
+  }
+  sheet.appendRow(rowData);
+}
+
+function deleteRowById(ss, sheetName, id) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return;
+  var rows = sheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+}
+
+function updateSaranRow(ss, id, tanggapan, status) {
+  var sheet = ss.getSheetByName("Saran");
+  if (!sheet) return;
+  var rows = sheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(id)) {
+      sheet.getRange(i + 1, 7).setValue(tanggapan);
+      sheet.getRange(i + 1, 8).setValue(status);
+      break;
+    }
+  }
+}</pre>
+                        <p class="text-amber-300 font-sans font-semibold mt-3">// Langkah 3: Klik 'Deploy' -> 'New Deployment' -> Select 'Web app'</p>
+                        <p class="text-amber-300 font-sans font-semibold">// Langkah 4: Set 'Execute as': Me, 'Who has access': Anyone</p>
+                        <p class="text-amber-300 font-sans font-semibold">// Langkah 5: Salin URL Web App dan tempelkan pada form di atas!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-4">
+                <button type="button" onclick="closeModal('modalGoogleSheetsConfig')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                <button type="button" onclick="saveGoogleSheetsConfig()" class="px-5 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Simpan & Test Koneksi</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: TAMBAH JADWAL -->
     <div id="modalJadwal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
@@ -528,7 +719,7 @@
                 </div>
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="closeModal('modalJadwal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-                    <button type="submit" id="btnSubmitJadwal" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-sm">Simpan Jadwal</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-sm">Simpan Jadwal</button>
                 </div>
             </form>
         </div>
@@ -595,9 +786,57 @@
                 </div>
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="closeModal('modalKunjungan')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-                    <button type="submit" id="btnSubmitKunjungan" class="px-5 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-sm">Simpan Kunjungan</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-sm">Simpan Kunjungan</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: BALAS/TANGGAPI SARAN -->
+    <div id="modalBalasSaran" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-reply text-brand-600"></i>
+                    Tindak Lanjut Kepala Lab
+                </h3>
+                <button onclick="closeModal('modalBalasSaran')" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form id="formBalasSaran" onsubmit="handleSaveTanggapan(event)" class="space-y-3.5 mt-4">
+                <input type="hidden" id="balasSaranId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggapan / Catatan Tindak Lanjut</label>
+                    <textarea id="balasSaranText" rows="3" required placeholder="Tuliskan tindak lanjut atau perbaikan yang telah dilakukan..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status Kendala</label>
+                    <select id="balasSaranStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="Selesai">Selesai (Sudah Ditangani)</option>
+                        <option value="Proses">Dalam Proses Penanganan</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modalBalasSaran')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-sm">Simpan Tanggapan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: KONFIRMASI HAPUS -->
+    <div id="modalConfirmDelete" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="font-bold text-slate-800 text-base mb-1">Konfirmasi Hapus</h3>
+            <p class="text-xs text-slate-500 mb-5" id="confirmDeleteText">Apakah Anda yakin ingin menghapus data ini dari sistem & Google Sheets?</p>
+            <div class="flex justify-center gap-2">
+                <button type="button" onclick="closeModal('modalConfirmDelete')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                <button type="button" id="confirmDeleteBtn" class="px-5 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg shadow-sm">Ya, Hapus Data</button>
+            </div>
         </div>
     </div>
 
@@ -615,10 +854,7 @@
     </div>
 
     <script>
-        // URL Apps Script Web App (Ganti dengan URL yang Anda dapatkan setelah Deploy Web App)
-        const SCRIPT_URL = "GANTI_DENGAN_URL_WEB_APP_ANDA";
-
-        // Data Awal State Application
+        // Main Application State
         let state = {
             jadwal: [],
             kunjungan: [],
@@ -626,8 +862,16 @@
         };
 
         const STORAGE_KEY = 'sistem_laporan_lab_komputer_db';
+        const SHEET_ID = '1szFq0n9kL8-X-vNe9pJVvwTKgkAZpwWAM3u31Dp1kuM';
+        const CONFIG_KEY = 'lab_komputer_sheets_config';
 
-        // Fungsi menyimpan data state ke LocalStorage
+        let googleSheetsConfig = {
+            webAppUrl: localStorage.getItem(CONFIG_KEY) || ''
+        };
+
+        let pendingDeleteAction = null;
+        let usageChartInstance = null;
+
         function saveToLocalStorage() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -636,7 +880,6 @@
             }
         }
 
-        // Fungsi memuat data dari LocalStorage
         function loadFromLocalStorage() {
             try {
                 const savedData = localStorage.getItem(STORAGE_KEY);
@@ -651,46 +894,119 @@
             }
         }
 
-        // Fungsi Helper Mengirim Data ke Google Sheets
-        async function sendToGoogleSheet(actionType, payload) {
-            if (!SCRIPT_URL || SCRIPT_URL === "GANTI_DENGAN_URL_WEB_APP_ANDA") {
-                console.warn("URL Apps Script belum diisi. Data disimpan ke LocalStorage saja.");
-                return;
+        async function sendToGoogleSheet(payload) {
+            if (!googleSheetsConfig.webAppUrl) {
+                updateSyncBadge('local', 'Mode Lokal (Belum Dihubungkan)');
+                return false;
             }
 
+            updateSyncBadge('syncing', 'Menyinkronkan ke Google Sheet...');
             try {
-                await fetch(SCRIPT_URL, {
+                const response = await fetch(googleSheetsConfig.webAppUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // Mencegah pemblokiran CORS dari Github Pages
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: actionType,
-                        data: payload
-                    })
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
                 });
+
+                const resData = await response.json();
+                if (resData.status === 'success') {
+                    updateSyncBadge('connected', 'Terhubung ke Google Sheet');
+                    return true;
+                } else {
+                    console.warn('Gagal sync ke Google Sheet:', resData.message);
+                    updateSyncBadge('local', 'Gagal Sync (Tersimpan Lokal)');
+                    return false;
+                }
             } catch (err) {
-                console.error("Gagal mengirim data ke Google Sheet:", err);
+                console.error('Network Error Google Sheets:', err);
+                updateSyncBadge('local', 'Offline (Tersimpan Lokal)');
+                return false;
             }
         }
 
-        let usageChartInstance = null;
+        async function syncDataFromSheet() {
+            if (!googleSheetsConfig.webAppUrl) {
+                updateSyncBadge('local', 'Mode Lokal (Atur Web App URL)');
+                return;
+            }
+
+            updateSyncBadge('syncing', 'Mengambil data dari Google Sheet...');
+            const icon = document.getElementById('syncIcon');
+            if(icon) icon.classList.add('fa-spin');
+
+            try {
+                const response = await fetch(googleSheetsConfig.webAppUrl, { method: 'GET' });
+                const data = await response.json();
+
+                if (data) {
+                    state.jadwal = data.jadwal || state.jadwal;
+                    state.kunjungan = data.kunjungan || state.kunjungan;
+                    state.saran = data.saran || state.saran;
+
+                    saveToLocalStorage();
+                    renderAllViews();
+                    updateSyncBadge('connected', 'Terhubung ke Google Sheet');
+                    showToast('Data berhasil disinkronkan dari Google Sheet!');
+                }
+            } catch (err) {
+                console.error('Error fetching from Google Sheets:', err);
+                updateSyncBadge('local', 'Gagal Ambil Sheet (Pakai Lokal)');
+            } finally {
+                if(icon) icon.classList.remove('fa-spin');
+            }
+        }
+
+        function updateSyncBadge(status, text) {
+            const badge = document.getElementById('syncStatusBadge');
+            const statusText = document.getElementById('syncStatusText');
+            if(!badge || !statusText) return;
+
+            statusText.innerText = text;
+
+            if (status === 'connected') {
+                badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-400";
+            } else if (status === 'syncing') {
+                badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-blue-400 animate-ping";
+            } else {
+                badge.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-amber-400";
+            }
+        }
 
         window.onload = function() {
             loadFromLocalStorage();
 
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('kunTanggal').value = today;
-            document.getElementById('currentDateFormatted').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const urlInput = document.getElementById('webAppUrlInput');
+            if(urlInput) urlInput.value = googleSheetsConfig.webAppUrl;
 
-            renderDashboardStats();
+            const today = new Date().toISOString().split('T')[0];
+            const kunTanggal = document.getElementById('kunTanggal');
+            if(kunTanggal) kunTanggal.value = today;
+            
+            const dateFormatted = document.getElementById('currentDateFormatted');
+            if(dateFormatted) dateFormatted.innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
             initChart();
+            renderAllViews();
+
+            if (googleSheetsConfig.webAppUrl) {
+                syncDataFromSheet();
+            } else {
+                updateSyncBadge('local', 'Mode Lokal (Klik Pengaturan untuk Sheet)');
+            }
+        };
+
+        function renderAllViews() {
+            renderDashboardStats();
             renderJadwalTable();
             renderKunjunganTable();
             renderSaranList();
             renderLaporanTable();
-        };
+            updateChart();
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -701,8 +1017,10 @@
 
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
             const activeNav = document.getElementById(`nav-${tabId}`);
-            activeNav.classList.add('bg-brand-500', 'text-white', 'shadow');
-            activeNav.classList.remove('text-brand-100');
+            if(activeNav) {
+                activeNav.classList.add('bg-brand-500', 'text-white', 'shadow');
+                activeNav.classList.remove('text-brand-100');
+            }
 
             if(tabId === 'dashboard' && usageChartInstance) {
                 usageChartInstance.resize();
@@ -741,15 +1059,8 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
-                    }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                 }
             });
         }
@@ -793,7 +1104,7 @@
                     <td class="p-4 font-medium text-slate-800">${j.mapel}</td>
                     <td class="p-4 text-slate-600">${j.guru}</td>
                     <td class="p-4 text-center">
-                        <button onclick="deleteJadwal(${j.id})" class="text-red-500 hover:text-red-700 transition-colors px-2 py-1" title="Hapus Jadwal">
+                        <button onclick="askDeleteJadwal(${j.id})" class="text-red-500 hover:text-red-700 transition-colors px-2 py-1" title="Hapus Jadwal">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </td>
@@ -803,10 +1114,6 @@
 
         async function handleSaveJadwal(e) {
             e.preventDefault();
-            const btn = document.getElementById('btnSubmitJadwal');
-            btn.disabled = true;
-            btn.innerText = "Menyimpan...";
-
             const newJadwal = {
                 id: Date.now(),
                 hari: document.getElementById('jadwalHari').value,
@@ -821,23 +1128,25 @@
             saveToLocalStorage();
             renderJadwalTable();
             renderDashboardStats();
-
-            // Kirim ke Google Sheet
-            await sendToGoogleSheet('ADD_JADWAL', newJadwal);
-
-            btn.disabled = false;
-            btn.innerText = "Simpan Jadwal";
             closeModal('modalJadwal');
             document.getElementById('formAddJadwal').reset();
-            showToast('Jadwal berhasil ditambahkan & tersimpan ke Google Sheet!');
+
+            showToast('Memproses penyimpanan ke Google Sheets...');
+            await sendToGoogleSheet({ action: 'addJadwal', ...newJadwal });
+            showToast('Jadwal baru berhasil disimpan!');
         }
 
-        function deleteJadwal(id) {
-            state.jadwal = state.jadwal.filter(j => j.id !== id);
-            saveToLocalStorage();
-            renderJadwalTable();
-            renderDashboardStats();
-            showToast('Jadwal berhasil dihapus', 'info');
+        function askDeleteJadwal(id) {
+            pendingDeleteAction = async () => {
+                state.jadwal = state.jadwal.filter(j => j.id !== id);
+                saveToLocalStorage();
+                renderJadwalTable();
+                renderDashboardStats();
+                await sendToGoogleSheet({ action: 'deleteJadwal', id: id });
+                showToast('Jadwal berhasil dihapus', 'info');
+            };
+            document.getElementById('confirmDeleteText').innerText = 'Apakah Anda yakin ingin menghapus data jadwal ini?';
+            openModal('modalConfirmDelete');
         }
 
         function renderKunjunganTable() {
@@ -846,9 +1155,9 @@
             const tbody = document.getElementById('kunjunganTableBody');
 
             let filtered = state.kunjungan.filter(k => {
-                const matchSearch = k.guru.toLowerCase().includes(search) || 
-                                    k.kelas.toLowerCase().includes(search) || 
-                                    k.mapel.toLowerCase().includes(search);
+                const matchSearch = String(k.guru || '').toLowerCase().includes(search) || 
+                                    String(k.kelas || '').toLowerCase().includes(search) || 
+                                    String(k.mapel || '').toLowerCase().includes(search);
                 const matchTanggal = filterTanggal ? k.tanggal === filterTanggal : true;
                 return matchSearch && matchTanggal;
             });
@@ -872,7 +1181,7 @@
                         <td class="p-4 font-semibold text-slate-800">${k.pcUsed} Unit</td>
                         <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass}">${k.kondisi}</span></td>
                         <td class="p-4 text-center">
-                            <button onclick="deleteKunjungan(${k.id})" class="text-red-500 hover:text-red-700 transition-colors px-2 py-1" title="Hapus Log">
+                            <button onclick="askDeleteKunjungan(${k.id})" class="text-red-500 hover:text-red-700 transition-colors px-2 py-1" title="Hapus Log">
                                 <i class="fa-regular fa-trash-can"></i>
                             </button>
                         </td>
@@ -883,10 +1192,6 @@
 
         async function handleSaveKunjungan(e) {
             e.preventDefault();
-            const btn = document.getElementById('btnSubmitKunjungan');
-            btn.disabled = true;
-            btn.innerText = "Menyimpan...";
-
             const newKun = {
                 id: Date.now(),
                 tanggal: document.getElementById('kunTanggal').value,
@@ -906,25 +1211,27 @@
             renderDashboardStats();
             renderLaporanTable();
             updateChart();
-
-            // Kirim ke Google Sheet
-            await sendToGoogleSheet('ADD_KUNJUNGAN', newKun);
-
-            btn.disabled = false;
-            btn.innerText = "Simpan Kunjungan";
             closeModal('modalKunjungan');
             document.getElementById('formAddKunjungan').reset();
-            showToast('Kunjungan berhasil disimpan & tersimpan ke Google Sheet!');
+
+            showToast('Menyimpan kunjungan ke Google Sheets...');
+            await sendToGoogleSheet({ action: 'addKunjungan', ...newKun });
+            showToast('Catatan kunjungan baru berhasil disimpan!');
         }
 
-        function deleteKunjungan(id) {
-            state.kunjungan = state.kunjungan.filter(k => k.id !== id);
-            saveToLocalStorage();
-            renderKunjunganTable();
-            renderDashboardStats();
-            renderLaporanTable();
-            updateChart();
-            showToast('Catatan kunjungan dihapus', 'info');
+        function askDeleteKunjungan(id) {
+            pendingDeleteAction = async () => {
+                state.kunjungan = state.kunjungan.filter(k => k.id !== id);
+                saveToLocalStorage();
+                renderKunjunganTable();
+                renderDashboardStats();
+                renderLaporanTable();
+                updateChart();
+                await sendToGoogleSheet({ action: 'deleteKunjungan', id: id });
+                showToast('Catatan kunjungan dihapus', 'info');
+            };
+            document.getElementById('confirmDeleteText').innerText = 'Apakah Anda yakin ingin menghapus riwayat kunjungan ini?';
+            openModal('modalConfirmDelete');
         }
 
         function resetFilterKunjungan() {
@@ -964,11 +1271,11 @@
                     <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
                         <span><i class="fa-regular fa-calendar mr-1"></i>${s.tanggal}</span>
                         <div class="flex items-center gap-3">
-                            <button onclick="toggleTanggapan(${s.id})" class="text-brand-600 hover:text-brand-800 font-medium flex items-center gap-1">
+                            <button onclick="openBalasSaranModal(${s.id})" class="text-brand-600 hover:text-brand-800 font-medium flex items-center gap-1">
                                 <i class="fa-regular fa-pen-to-square"></i>
                                 ${s.tanggapan ? 'Edit Tanggapan' : 'Beri Tanggapan'}
                             </button>
-                            <button onclick="deleteSaran(${s.id})" class="text-red-500 hover:text-red-700 font-medium flex items-center gap-1 hover:underline" title="Hapus Masukan">
+                            <button onclick="askDeleteSaran(${s.id})" class="text-red-500 hover:text-red-700 font-medium flex items-center gap-1 hover:underline" title="Hapus Masukan">
                                 <i class="fa-regular fa-trash-can"></i>
                                 <span>Hapus</span>
                             </button>
@@ -980,10 +1287,6 @@
 
         async function handleSaveSaran(e) {
             e.preventDefault();
-            const btn = document.getElementById('btnSubmitSaran');
-            btn.disabled = true;
-            btn.innerText = "Mengirim...";
-
             const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
             const newSaran = {
                 id: Date.now(),
@@ -1000,36 +1303,54 @@
             saveToLocalStorage();
             renderSaranList();
             renderDashboardStats();
-
-            // Kirim ke Google Sheet
-            await sendToGoogleSheet('ADD_SARAN', newSaran);
-
-            btn.disabled = false;
-            btn.innerText = "Kirim Saran";
             document.getElementById('formSaran').reset();
-            showToast('Saran berhasil terkirim & tersimpan ke Google Sheet!');
+
+            showToast('Mengirim saran ke Google Sheets...');
+            await sendToGoogleSheet({ action: 'addSaran', ...newSaran });
+            showToast('Saran & masukan Anda telah terkirim!');
         }
 
-        function deleteSaran(id) {
-            state.saran = state.saran.filter(s => s.id !== id);
-            saveToLocalStorage();
-            renderSaranList();
-            renderDashboardStats();
-            showToast('Saran & kendala berhasil dihapus!', 'info');
-        }
-
-        function toggleTanggapan(id) {
+        function openBalasSaranModal(id) {
             const saranObj = state.saran.find(s => s.id === id);
             if(!saranObj) return;
 
-            const balasan = prompt('Masukkan Tanggapan / Tindak Lanjut Kepala Lab:', saranObj.tanggapan || 'Masukan telah ditindaklanjuti.');
-            if(balasan !== null) {
-                saranObj.tanggapan = balasan;
-                saranObj.status = 'Selesai';
+            document.getElementById('balasSaranId').value = id;
+            document.getElementById('balasSaranText').value = saranObj.tanggapan || '';
+            document.getElementById('balasSaranStatus').value = saranObj.status || 'Selesai';
+            openModal('modalBalasSaran');
+        }
+
+        async function handleSaveTanggapan(e) {
+            e.preventDefault();
+            const id = Number(document.getElementById('balasSaranId').value);
+            const tanggapan = document.getElementById('balasSaranText').value;
+            const status = document.getElementById('balasSaranStatus').value;
+
+            const saranObj = state.saran.find(s => s.id === id);
+            if(saranObj) {
+                saranObj.tanggapan = tanggapan;
+                saranObj.status = status;
                 saveToLocalStorage();
                 renderSaranList();
+                closeModal('modalBalasSaran');
+
+                showToast('Memperbarui tanggapan di Google Sheets...');
+                await sendToGoogleSheet({ action: 'updateSaran', id, tanggapan, status });
                 showToast('Tanggapan berhasil diperbarui!');
             }
+        }
+
+        function askDeleteSaran(id) {
+            pendingDeleteAction = async () => {
+                state.saran = state.saran.filter(s => s.id !== id);
+                saveToLocalStorage();
+                renderSaranList();
+                renderDashboardStats();
+                await sendToGoogleSheet({ action: 'deleteSaran', id: id });
+                showToast('Saran & kendala berhasil dihapus!', 'info');
+            };
+            document.getElementById('confirmDeleteText').innerText = 'Apakah Anda yakin ingin menghapus saran/masukan ini?';
+            openModal('modalConfirmDelete');
         }
 
         function renderLaporanTable() {
@@ -1060,6 +1381,41 @@
             window.print();
         }
 
+        function saveGoogleSheetsConfig() {
+            const url = document.getElementById('webAppUrlInput').value.trim();
+            googleSheetsConfig.webAppUrl = url;
+            localStorage.setItem(CONFIG_KEY, url);
+            closeModal('modalGoogleSheetsConfig');
+            
+            if (url) {
+                syncDataFromSheet();
+            } else {
+                updateSyncBadge('local', 'Mode Lokal (Tanpa Web App URL)');
+                showToast('URL Google Apps Script dikosongkan (Mode Lokal)', 'info');
+            }
+        }
+
+        function toggleScriptGuide() {
+            const container = document.getElementById('scriptGuideContainer');
+            const btnText = document.getElementById('scriptGuideBtnText');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btnText.innerText = 'Sembunyikan Kode Google Apps Script';
+            } else {
+                container.classList.add('hidden');
+                btnText.innerText = 'Lihat Kode Google Apps Script & Cara Pasang';
+            }
+        }
+
+        function copyAppsScriptCode() {
+            const code = document.getElementById('appsScriptCodeText').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const textEl = document.getElementById('copyScriptText');
+                textEl.innerText = 'Tersalin!';
+                setTimeout(() => { textEl.innerText = 'Salin Script'; }, 2000);
+            });
+        }
+
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
         }
@@ -1067,6 +1423,14 @@
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
         }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+            closeModal('modalConfirmDelete');
+            if (typeof pendingDeleteAction === 'function') {
+                await pendingDeleteAction();
+                pendingDeleteAction = null;
+            }
+        });
 
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toastNotification');
@@ -1086,7 +1450,7 @@
             setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+            }, 3500);
         }
     </script>
 </body>
